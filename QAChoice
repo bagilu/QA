@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>選擇題測驗</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    .btn-answer { margin: 10px 0; }
+    #result { font-weight: bold; margin-top: 15px; }
+  </style>
+</head>
+<body class="container py-5">
+  <h1 class="mb-4">選擇題測驗</h1>
+  <div id="question" class="mb-4">載入中...</div>
+  <div id="choices" class="d-grid gap-2"></div>
+  <div id="result" class="mt-3"></div>
+
+  <script>
+    // 🧩 替換成你自己的 Supabase URL 與 API Key
+    const supabaseUrl = 'https://jwqomxsavhoeljtrtnld.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3cW9teHNhdmhvZWxqdHJ0bmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MDkyOTQsImV4cCI6MjA1ODk4NTI5NH0.JlFkZ6_jKzUWF-N_pp223W0eOOEQztxPA_bIGNzbL4A';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    async function loadRandomQuestion() {
+      const questionDiv = document.getElementById('question');
+      const choicesDiv = document.getElementById('choices');
+      const resultDiv = document.getElementById('result');
+
+      // 先清空畫面
+      questionDiv.textContent = '載入中...';
+      choicesDiv.innerHTML = '';
+      resultDiv.textContent = '';
+
+      // 從 Supabase 隨機抓一筆資料
+      let { data, error } = await supabase
+        .from('TblQuestionChoice')
+        .select('*')
+        .order('RANDOM()', { foreignTable: '', ascending: true })  // 隨機排序
+        .limit(1);
+
+      if (error) {
+        questionDiv.textContent = '⚠️ 載入題目失敗';
+        console.error(error);
+        return;
+      }
+
+      const question = data[0];
+
+      // 顯示題目
+      questionDiv.textContent = question.Q;
+
+      // 建立答案選項並打亂
+      const answers = [
+        { text: question.CA, correct: true },
+        { text: question.WA1, correct: false },
+        { text: question.WA2, correct: false },
+        { text: question.WA3, correct: false }
+      ].sort(() => Math.random() - 0.5);
+
+      // 產生按鈕
+      answers.forEach(answer => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-outline-primary btn-answer';
+        btn.textContent = answer.text;
+        btn.onclick = () => {
+          resultDiv.textContent = answer.correct ? '✅ 正確！' : '❌ 錯誤！';
+          btn.classList.remove('btn-outline-primary');
+          btn.classList.add(answer.correct ? 'btn-success' : 'btn-danger');
+        };
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    // 載入一題
+    loadRandomQuestion();
+  </script>
+</body>
+</html>
